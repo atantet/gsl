@@ -71,7 +71,7 @@ gsl_spmatrix_memcpy(gsl_spmatrix *dest, const gsl_spmatrix *src)
                 }
             }
         }
-      else if (GSL_SPMATRIX_ISCCS(src))
+      else if (GSL_SPMATRIX_ISCCS(src) || GSL_SPMATRIX_ISCRS(src))
         {
           for (n = 0; n < src->nz; ++n)
             {
@@ -79,7 +79,7 @@ gsl_spmatrix_memcpy(gsl_spmatrix *dest, const gsl_spmatrix *src)
               dest->data[n] = src->data[n];
             }
 
-          for (n = 0; n < src->size2 + 1; ++n)
+          for (n = 0; n < src->outerSize + 1; ++n)
             {
               dest->p[n] = src->p[n];
             }

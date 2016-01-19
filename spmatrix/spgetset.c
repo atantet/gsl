@@ -63,6 +63,19 @@ gsl_spmatrix_get(const gsl_spmatrix *m, const size_t i, const size_t j)
                 return m->data[p];
             }
         }
+      else if (GSL_SPMATRIX_ISCRS(m))
+        {
+          const size_t *mi = m->i;
+          const size_t *mp = m->p;
+          size_t p;
+
+          /* loop over row i and search for column index j */
+          for (p = mp[i]; p < mp[i + 1]; ++p)
+            {
+              if (mi[p] == j)
+                return m->data[p];
+            }
+        }
       else
         {
           GSL_ERROR_VAL("unknown sparse matrix type", GSL_EINVAL, 0.0);
@@ -85,7 +98,7 @@ Inputs: m - spmatrix
 
 int
 gsl_spmatrix_set(gsl_spmatrix *m, const size_t i, const size_t j,
-                 const double x)
+                 const double x, const int sum_duplicate)
 {
   if (!GSL_SPMATRIX_ISTRIPLET(m))
     {
@@ -128,8 +141,17 @@ gsl_spmatrix_set(gsl_spmatrix *m, const size_t i, const size_t j,
       ptr = avl_insert(m->tree_data->tree, &m->data[m->nz]);
       if (ptr != NULL)
         {
-          /* found duplicate entry (i,j), replace with new x */
-          *((double *) ptr) = x;
+          /* AT: found duplicate entry (i,j) */
+	  if (sum_duplicate)
+	    {
+	      /* sum it with new x */
+	      *((double *) ptr) += x
+	    }
+	  else
+	    {
+	      /* replace with new x */
+	      *((double *) ptr) = x;
+	    }
         }
       else
         {

@@ -79,6 +79,7 @@ gsl_spmatrix_alloc_nzmax(const size_t n1, const size_t n2,
 {
   gsl_spmatrix *m;
 
+  /* ?AT: Is there a reason to use GSL_ERROR_VAL and not GSL_ERROR_NULL? */
   if (n1 == 0)
     {
       GSL_ERROR_VAL ("matrix dimension n1 must be positive integer",
@@ -90,7 +91,8 @@ gsl_spmatrix_alloc_nzmax(const size_t n1, const size_t n2,
                      GSL_EINVAL, 0);
     }
 
-  m = calloc(1, sizeof(gsl_spmatrix));
+  /* AT: added cast for C++ compatibility */
+  m = (gsl_spmatrix *) calloc(1, sizeof(gsl_spmatrix));
   if (!m)
     {
       GSL_ERROR_VAL("failed to allocate space for spmatrix struct",
@@ -103,7 +105,7 @@ gsl_spmatrix_alloc_nzmax(const size_t n1, const size_t n2,
   m->nzmax = GSL_MAX(nzmax, 1);
   m->sptype = sptype;
 
-  m->i = malloc(m->nzmax * sizeof(size_t));
+  m->i = (size_t *) malloc(m->nzmax * sizeof(size_t));
   if (!m->i)
     {
       gsl_spmatrix_free(m);
@@ -113,7 +115,7 @@ gsl_spmatrix_alloc_nzmax(const size_t n1, const size_t n2,
 
   if (sptype == GSL_SPMATRIX_TRIPLET)
     {
-      m->tree_data = malloc(sizeof(gsl_spmatrix_tree));
+      m->tree_data = (gsl_spmatrix_tree *) malloc(sizeof(gsl_spmatrix_tree));
       if (!m->tree_data)
         {
           gsl_spmatrix_free(m);
@@ -142,7 +144,7 @@ gsl_spmatrix_alloc_nzmax(const size_t n1, const size_t n2,
                         GSL_ENOMEM, 0);
         }
 
-      m->p = malloc(m->nzmax * sizeof(size_t));
+      m->p = (size_t *) malloc(m->nzmax * sizeof(size_t));
       if (!m->p)
         {
           gsl_spmatrix_free(m);
@@ -150,9 +152,20 @@ gsl_spmatrix_alloc_nzmax(const size_t n1, const size_t n2,
                         GSL_ENOMEM, 0);
         }
     }
-  else if (sptype == GSL_SPMATRIX_CCS)
+  else if ((sptype == GSL_SPMATRIX_CCS) || (sptype == GSL_SPMATRIX_CRS))
     {
-      m->p = malloc((n2 + 1) * sizeof(size_t));
+      /* Set inner and outer sizes depending on type */
+      if (sptype == GSL_SPMATRIX_CCS)
+	{
+	  m->innerSize = m->size1;
+	  m->outerSize = m->size2;
+	}
+      else if (sptype == GSL_SPMATRIX_CRS)
+	{
+	  m->innerSize = m->size2;
+	  m->outerSize = m->size1;
+	}
+      m->p = (size_t *) malloc((n2 + 1) * sizeof(size_t));
       m->work = malloc(GSL_MAX(n1, n2) *
                        GSL_MAX(sizeof(size_t), sizeof(double)));
       if (!m->p || !m->work)
@@ -163,7 +176,7 @@ gsl_spmatrix_alloc_nzmax(const size_t n1, const size_t n2,
         }
     }
 
-  m->data = malloc(m->nzmax * sizeof(double));
+  m->data = (double *) malloc(m->nzmax * sizeof(double));
   if (!m->data)
     {
       gsl_spmatrix_free(m);

@@ -25,33 +25,61 @@
 #include <gsl/gsl_spmatrix.h>
 
 /*
-gsl_spmatrix_compcol()
-  Create a sparse matrix in compressed column format
+gsl_spmatrix_compress()
+  Create a sparse matrix in compressed format
 
 Inputs: T - sparse matrix in triplet format
+        sptype - matrix type to which to compress (either CCS or CRS)
 
 Return: pointer to new matrix (should be freed when finished with it)
 */
 
+/* AT: either compressed column or row storage depending on sptype */
 gsl_spmatrix *
-gsl_spmatrix_compcol(const gsl_spmatrix *T)
+gsl_spmatrix_compress(const gsl_spmatrix *T, const size_t sptype)
 {
-  const size_t *Tj; /* column indices of triplet matrix */
-  size_t *Cp;       /* column pointers of compressed column matrix */
-  size_t *w;        /* copy of column pointers */
+  const size_t *TOuter; /* column (CCS) / row (CRS) indices of triplet matrix */
+  size_t *Cp;       /* outer pointers of compressed matrix */
+  size_t *w;        /* copy of outer pointers */
   gsl_spmatrix *m;
   size_t n;
 
-  m = gsl_spmatrix_alloc_nzmax(T->size1, T->size2, T->nz,
-                               GSL_SPMATRIX_CCS);
-  if (!m)
-    return NULL;
+  /* AT: Error handling for matrix type */
+  if (sptype == GSL_SPMATRIX_TRIPLET)
+    {
+      GSL_ERROR_NULL("choice of sparse matrix type should not be triplet", GSL_EINVAL);
+    }
+  else if ((sptype != GSL_SPMATRIX_CCS) && (sptype != GSL_SPMATRIX_CRS))
+    {
+      GSL_ERROR_NULL("unknown choice of sparse matrix type", GSL_EINVAL);
+    }
 
-  Tj = T->p;
+  /* AT: Allocate for the chosen matrix type */
+  m = gsl_spmatrix_alloc_nzmax(T->size1, T->size2, T->nz, sptype);
+  
+  /* AT: Error handling */
+  if (!m)
+    GSL_ERROR_NULL("failed to allocate space for spmatrix struct",
+		   GSL_ENOMEM);
+
+  /* To which indices of triplet matrix
+   * do the outer indices of m correspond to? */
+  if (sptype == GSL_SPMATRIX_CCS)
+    {
+      /* outer indices of T = columns of triplet */
+      TOuter = T->p;                 
+    }
+  else if (sptype == GSL_SPMATRIX_CRS)
+    {
+      /* outer indices of T = rows of triplet */
+      TOuter = T->i;                 
+    }
+
+  /* Alias to pointer */
   Cp = m->p;
 
-  /* initialize column pointers to 0 */
-  for (n = 0; n < m->size2 + 1; ++n)
+  /* AT: initialize outer pointers to 0 */
+  for (n = 0; n < m->outerSize + 1; ++n)
     Cp[n] = 0;
 
   /*
@@ -59,22 +87,35 @@ gsl_spmatrix_compcol(const gsl_spmatrix *T)
    * Cp[j] = # non-zero elements in column j
    */
   for (n = 0; n < T->nz; ++n)
-    Cp[Tj[n]]++;
+    Cp[TOuter[n]]++;
 
   /* compute column pointers: p[j] = p[j-1] + nnz[j-1] */
-  gsl_spmatrix_cumsum(m->size2, Cp);
+  gsl_spmatrix_cumsum(m->outerSize, Cp);
 
-  /* make a copy of the column pointers */
+  /* AT: make a copy of the outer pointers */
   w = (size_t *) m->work;
-  for (n = 0; n < m->size2; ++n)
+  for (n = 0; n < m->outerSize; ++n)
     w[n] = Cp[n];
 
-  /* transfer data from triplet format to compressed column */
-  for (n = 0; n < T->nz; ++n)
+  if (sptype == GSL_SPMATRIX_CCS)
     {
-      size_t k = w[Tj[n]]++;
-      m->i[k] = T->i[n];
-      m->data[k] = T->data[n];
+      /* transfer data from triplet format to compressed column */
+      for (n = 0; n < T->nz; ++n)
+	{
+	  size_t k = w[TOuter[n]]++;
+	  m->i[k] = T->i[n];
+	  m->data[k] = T->data[n];
+	}
+    }
+  else if (sptype == GSL_SPMATRIX_CRS)
+    {
+      /* AT: transfer data from triplet format to compressed row */
+      for (n = 0; n < T->nz; ++n)
+	{
+	  size_t k = w[TOuter[n]]++;
+	  m->i[k] = T->p[n];
+	  m->data[k] = T->data[n];
+	}
     }
 
   m->nz = T->nz;
