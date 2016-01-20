@@ -61,7 +61,7 @@ gsl_spblas_dgemv(const CBLAS_TRANSPOSE_t TransA, const double alpha,
     }
   else
     {
-      size_t j, p;
+      size_t j, p, outerIdx;
       size_t incX, incY;
       size_t lenX, lenY;
       double *X, *Y;
@@ -129,6 +129,8 @@ gsl_spblas_dgemv(const CBLAS_TRANSPOSE_t TransA, const double alpha,
       else if ((GSL_SPMATRIX_ISCRS(A) && (TransA == CblasNoTrans))
 	       || (GSL_SPMATRIX_ISCCS(A) && (TransA == CblasTrans)))
 	{
+          Ai = A->i;
+
 	  for (outerIdx = 0; outerIdx < A->outerSize; ++outerIdx)
 	    {
 	      for (p = Ap[outerIdx]; p < Ap[outerIdx + 1]; ++p)

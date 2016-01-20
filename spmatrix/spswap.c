@@ -187,14 +187,14 @@ gsl_spmatrix_switch_major(gsl_spmatrix *dest, const gsl_spmatrix *src)
       GSL_ERROR_NULL("sparse matrix type should not be triplet", GSL_EINVAL);
     }
   
+  /** Effectively transpose in place by switching type */
+  gsl_spmatrix_transpose(dest);
+  
   /** Get transpose of source matrix with copy */
   if (gsl_spmatrix_transpose_memcpy(dest, src))
     {
       GSL_ERROR_NULL("error transposing with copy", GSL_EINVAL);
     }
 
-  /** Transpose back but in place, effectively switching type */
-  gsl_spmatrix_transpose(dest);
-  
   return GSL_SUCCESS;
 }

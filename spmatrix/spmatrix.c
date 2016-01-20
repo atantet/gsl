@@ -165,7 +165,7 @@ gsl_spmatrix_alloc_nzmax(const size_t n1, const size_t n2,
 	  m->innerSize = m->size2;
 	  m->outerSize = m->size1;
 	}
-      m->p = (size_t *) malloc((n2 + 1) * sizeof(size_t));
+      m->p = (size_t *) malloc((m->outerSize + 1) * sizeof(size_t));
       m->work = malloc(GSL_MAX(n1, n2) *
                        GSL_MAX(sizeof(size_t), sizeof(double)));
       if (!m->p || !m->work)

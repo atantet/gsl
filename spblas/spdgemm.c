@@ -51,13 +51,13 @@ gsl_spblas_dgemm(const double alpha, const gsl_spmatrix *A1,
     {
       GSL_ERROR("matrix storage formats do not match", GSL_EINVAL);
     }
-  else if (!(GSL_SPMATRIX_ISCCS(A1) || GSL_SPMATRIX_CRS(A1)))
+  else if (!(GSL_SPMATRIX_ISCCS(A1) || GSL_SPMATRIX_ISCRS(A1)))
     {
       GSL_ERROR("compressed column format required", GSL_EINVAL);
     }
   else
     {
-      gsl_spmatrix *C, *A2, *B2;
+      gsl_spmatrix *A, *B;
       
       if (GSL_SPMATRIX_ISCRS(A1))
 	{
@@ -65,7 +65,9 @@ gsl_spblas_dgemm(const double alpha, const gsl_spmatrix *A1,
 	   * Transposing in place and then back would be dangerous.
 	   * Instead, copy and transpose the matrices without reallocating
 	   * and changin only the flags and dimensions.
-	   * Care should be taken not to modify the pointers. */
+	   * Care should be taken not to modify the pointers.
+	   * The result matrix C is already in CRS format so there is
+	   * no need to end calling _transpose (inplace). */
 	  B = (gsl_spmatrix *) calloc(1, sizeof(gsl_spmatrix));
 	  B->size1 = A1->size2;
 	  B->size2 = A1->size1;
@@ -79,7 +81,7 @@ gsl_spblas_dgemm(const double alpha, const gsl_spmatrix *A1,
 	  B->nz = A1->nz;
 	  B->work = A1->work;
 
-	  A = gsl_spmatrix_alloc_nzmax(B1->size2, B1->size1, 0, GSL_SPMATRIX_CCS);
+	  A = (gsl_spmatrix *) calloc(1, sizeof(gsl_spmatrix));
 	  A->size1 = B1->size2;
 	  A->size2 = B1->size1;
 	  A->sptype = GSL_SPMATRIX_CCS;
@@ -103,7 +105,7 @@ gsl_spblas_dgemm(const double alpha, const gsl_spmatrix *A1,
       size_t *Bi = B->i;
       size_t *Bp = B->p;
       double *Bd = B->data;
-      size_t *w = (size_t *) A1->work; /* workspace of length M */
+      size_t *w = (size_t *) A->work; /* workspace of length M */
       double *x = (double *) C->work; /* workspace of length M */
       size_t *Cp, *Ci;
       double *Cd;
@@ -159,14 +161,10 @@ gsl_spblas_dgemm(const double alpha, const gsl_spmatrix *A1,
       /* scale by alpha */
       gsl_spmatrix_scale(C, alpha);
 
-      /* AT: Calculate the transpose of C in place */
-      if (GSL_SPMATRIX_ISCRS(A))
+      if (GSL_SPMATRIX_ISCRS(A1))
 	{
-	  if ((status = gsl_spmatrix_transpose(C)) != GSL_SUCCESS)
-	    {
-	      GSL_ERROR_NULL("could not transpose result of \
-matrix multiplication in place", GSL_ENOMEM);
-	    }
+	  free(A);
+	  free(B);
 	}
       
       return status;

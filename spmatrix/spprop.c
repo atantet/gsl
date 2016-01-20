@@ -79,7 +79,7 @@ gsl_spmatrix_equal(const gsl_spmatrix *a, const gsl_spmatrix *b)
             }
 
           /* AT: check outer pointers */
-          for (outerIdx = 0; outerIdx < a->outerSize + 1; ++n)
+          for (outerIdx = 0; outerIdx < a->outerSize + 1; ++outerIdx)
             {
               if (a->p[outerIdx] != b->p[outerIdx])
                 return 0;

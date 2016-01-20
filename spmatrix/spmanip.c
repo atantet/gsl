@@ -22,12 +22,15 @@
 gsl_vector *
 gsl_spmatrix_get_rowsum(const gsl_spmatrix *m)
 {
-  size_t outerIdx, p;
+  size_t n, outerIdx, p;
   gsl_vector *sum = gsl_vector_calloc(m->size1);;
     
   if (GSL_SPMATRIX_ISTRIPLET(m))
     {
-      GSL_ERROR_NULL("sparse matrix type should not be triplet", GSL_EINVAL);
+      for (n = 0; n < m->nz; n++)
+	{
+	  sum->data[m->i[n] * sum->stride] += m->data[n];
+	}
     }
   else if (GSL_SPMATRIX_ISCCS(m))
     {
@@ -67,12 +70,15 @@ gsl_spmatrix_get_rowsum(const gsl_spmatrix *m)
 gsl_vector *
 gsl_spmatrix_get_colsum(const gsl_spmatrix *m)
 {
-  size_t outerIdx, p;
+  size_t outerIdx, p, n;
   gsl_vector *sum = gsl_vector_calloc(m->size2);
     
   if (GSL_SPMATRIX_ISTRIPLET(m))
     {
-      GSL_ERROR_NULL("sparse matrix type should not be triplet", GSL_EINVAL);
+      for (n = 0; n < m->nz; n++)
+	{
+	  sum->data[m->p[n] * sum->stride] += m->data[n];
+	}
     }
   else if (GSL_SPMATRIX_ISCCS(m))
     {
@@ -134,11 +140,17 @@ gsl_spmatrix_get_sum(const gsl_spmatrix *m)
 int
 gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v)
 {
-  size_t outerIdx, p;
+  size_t outerIdx, p, n;
 
   if (GSL_SPMATRIX_ISTRIPLET(m))
     {
-      GSL_ERROR("sparse matrix type should not be triplet", GSL_EINVAL);
+      for (n = 0; n < m->nz; n++)
+	{
+	  if (gsl_pow_2(v->data[m->i[n] * v->stride]) > 1.e-6)
+	    {
+	      m->data[n] /= v->data[m->i[n] * v->stride];
+	    }
+	}
     }
   else if (GSL_SPMATRIX_ISCCS(m))
     {
@@ -146,7 +158,7 @@ gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (v->data[m->i[p] * v->stride] != 0)
+	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > 1.e-6)
 		{
 		  m->data[p] /= v->data[m->i[p] * v->stride];
 		}
@@ -159,7 +171,7 @@ gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (v->data[outerIdx * v->stride] != 0)
+	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > 1.e-6)
 		{
 		  m->data[p] /= v->data[outerIdx * v->stride];
 		}
@@ -185,11 +197,17 @@ gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v)
 int
 gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v)
 {
-  size_t outerIdx, p;
+  size_t outerIdx, p, n;
 
   if (GSL_SPMATRIX_ISTRIPLET(m))
     {
-      GSL_ERROR("sparse matrix type should not be triplet", GSL_EINVAL);
+      for (n = 0; n < m->nz; n++)
+	{
+	  if (gsl_pow_2(v->data[m->p[n] * v->stride]) > 1.e-6)
+	    {
+	      m->data[n] = m->data[n] / v->data[m->p[n] * v->stride];
+	    }
+	}
     }
   else if (GSL_SPMATRIX_ISCCS(m))
     {
@@ -197,20 +215,20 @@ gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (v->data[outerIdx * v->stride] != 0)
+	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > 1.e-6)
 		{
 		  m->data[p] /= v->data[outerIdx * v->stride];
 		}
 	    }
 	}
     }
-  if (GSL_SPMATRIX_ISCRS(m))
+  else if (GSL_SPMATRIX_ISCRS(m))
     {
       for (outerIdx = 0; outerIdx < m->outerSize; outerIdx++)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (v->data[m->i[p] * v->stride] != 0)
+	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > 1.e-6)
 		{
 		  m->data[p] /= v->data[m->i[p] * v->stride];
 		}

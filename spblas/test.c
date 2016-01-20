@@ -67,7 +67,7 @@ create_random_sparse(const size_t M, const size_t N, const double density,
 
       /* generate random m_{ij} and add it */
       double x = gsl_rng_uniform(r);
-      gsl_spmatrix_set(m, i, j, x);
+      gsl_spmatrix_set(m, i, j, x, 0);
     }
 
   return m;
@@ -151,13 +151,23 @@ test_dgemv(const size_t N, const size_t M, const double alpha,
   test_vectors(y_sp, y_gsl, 1.0e-10, "test_dgemv: triplet format");
 
   /* compute y = alpha*op(A)*x + beta*y0 with spblas/compcol */
-  C = gsl_spmatrix_compcol(A);
+  C = gsl_spmatrix_compress(A, GSL_SPMATRIX_CCS);
   gsl_vector_memcpy(y_sp, y);
   gsl_spblas_dgemv(TransA, alpha, C, x, beta, y_sp);
 
   /* test y_sp = y_gsl */
   test_vectors(y_sp, y_gsl, 1.0e-10,
                "test_dgemv: compressed column format");
+
+  /* compute y = alpha*op(A)*x + beta*y0 with spblas/comprow */
+  gsl_spmatrix_free(C);
+  C = gsl_spmatrix_compress(A, GSL_SPMATRIX_CRS);
+  gsl_vector_memcpy(y_sp, y);
+  gsl_spblas_dgemv(TransA, alpha, C, x, beta, y_sp);
+
+  /* test y_sp = y_gsl */
+  test_vectors(y_sp, y_gsl, 1.0e-10,
+               "test_dgemv: compressed row format");
 
   gsl_spmatrix_free(A);
   gsl_spmatrix_free(C);
@@ -178,6 +188,7 @@ test_dgemm(const double alpha, const size_t M, const size_t N,
   gsl_matrix *B_dense = gsl_matrix_alloc(max, N);
   gsl_matrix *C_dense = gsl_matrix_alloc(M, N);
   gsl_spmatrix *C = gsl_spmatrix_alloc_nzmax(M, N, 1, GSL_SPMATRIX_CCS);
+  gsl_spmatrix *CR = gsl_spmatrix_alloc_nzmax(M, N, 1, GSL_SPMATRIX_CRS);
 
   for (k = 1; k <= max; ++k)
     {
@@ -185,8 +196,10 @@ test_dgemm(const double alpha, const size_t M, const size_t N,
       gsl_matrix_view Bd = gsl_matrix_submatrix(B_dense, 0, 0, k, N);
       gsl_spmatrix *TA = create_random_sparse(M, k, 0.2, r);
       gsl_spmatrix *TB = create_random_sparse(k, N, 0.2, r);
-      gsl_spmatrix *A = gsl_spmatrix_compcol(TA);
-      gsl_spmatrix *B = gsl_spmatrix_compcol(TB);
+      gsl_spmatrix *A = gsl_spmatrix_compress(TA, GSL_SPMATRIX_CCS);
+      gsl_spmatrix *B = gsl_spmatrix_compress(TB, GSL_SPMATRIX_CCS);
+      gsl_spmatrix *AR = gsl_spmatrix_compress(TA, GSL_SPMATRIX_CRS);
+      gsl_spmatrix *BR = gsl_spmatrix_compress(TB, GSL_SPMATRIX_CRS);
 
       gsl_spmatrix_set_zero(C);
       gsl_spblas_dgemm(alpha, A, B, C);
@@ -205,7 +218,22 @@ test_dgemm(const double alpha, const size_t M, const size_t N,
               double Cij = gsl_spmatrix_get(C, i, j);
               double Dij = gsl_matrix_get(C_dense, i, j);
 
-              gsl_test_rel(Cij, Dij, 1.0e-12, "test_dgemm: _dgemm");
+              gsl_test_rel(Cij, Dij, 1.0e-12, "test_dgemm: _dgemm compcol");
+            }
+        }
+
+      gsl_spmatrix_set_zero(CR);
+      gsl_spblas_dgemm(alpha, AR, BR, CR);
+
+      /* compare CR and C_dense */
+      for (i = 0; i < M; ++i)
+        {
+          for (j = 0; j < N; ++j)
+            {
+              double Cij = gsl_spmatrix_get(CR, i, j);
+              double Dij = gsl_matrix_get(C_dense, i, j);
+
+              gsl_test_rel(Cij, Dij, 1.0e-12, "test_dgemm: _dgemm comprow");
             }
         }
 
@@ -213,9 +241,12 @@ test_dgemm(const double alpha, const size_t M, const size_t N,
       gsl_spmatrix_free(TB);
       gsl_spmatrix_free(A);
       gsl_spmatrix_free(B);
+      gsl_spmatrix_free(AR);
+      gsl_spmatrix_free(BR);
     }
 
   gsl_spmatrix_free(C);
+  gsl_spmatrix_free(CR);
   gsl_matrix_free(A_dense);
   gsl_matrix_free(B_dense);
   gsl_matrix_free(C_dense);
