@@ -145,7 +145,7 @@ gsl_spmatrix_set(gsl_spmatrix *m, const size_t i, const size_t j,
 	  if (sum_duplicate)
 	    {
 	      /* sum it with new x */
-	      *((double *) ptr) += x
+	      *((double *) ptr) += x;
 	    }
 	  else
 	    {

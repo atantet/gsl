@@ -100,7 +100,7 @@ gsl_spmatrix_fscanf(FILE *stream, const int sum_duplicate)
       GSL_ERROR_NULL("Not all arguments scanned for header", GSL_EFAILED);
     }
   m = gsl_spmatrix_alloc_nzmax(M, N, nz, GSL_SPMATRIX_TRIPLET);
-
+  
   /** Add all elements */
   for (n = 0; n < nz; ++n)
     {
@@ -110,7 +110,6 @@ gsl_spmatrix_fscanf(FILE *stream, const int sum_duplicate)
 	}
       gsl_spmatrix_set(m, i, j, x, sum_duplicate);
     }
-  }
   
   return m;
 }

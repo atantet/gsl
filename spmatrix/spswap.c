@@ -179,8 +179,8 @@ gsl_spmatrix_transpose(gsl_spmatrix *src)
  * \param[in] src Source matrix to convert.
  * \return        Converted matrix.
  */
-gsl_spmatrix *
-gsl_spmatrix_switch_major(gsl_spmatrix *src)
+int
+gsl_spmatrix_switch_major(gsl_spmatrix *dest, const gsl_spmatrix *src)
 {
   if (GSL_SPMATRIX_ISTRIPLET(src))
     {
@@ -188,10 +188,13 @@ gsl_spmatrix_switch_major(gsl_spmatrix *src)
     }
   
   /** Get transpose of source matrix with copy */
-  gsl_spmatrix *dest = gsl_spmatrix_transpose_memcpy(src);
+  if (gsl_spmatrix_transpose_memcpy(dest, src))
+    {
+      GSL_ERROR_NULL("error transposing with copy", GSL_EINVAL);
+    }
 
   /** Transpose back but in place, effectively switching type */
   gsl_spmatrix_transpose(dest);
   
-  return dest;
+  return GSL_SUCCESS;
 }

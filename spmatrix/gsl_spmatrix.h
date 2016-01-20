@@ -158,7 +158,7 @@ int gsl_spmatrix_any(const gsl_spmatrix *m);
 int gsl_spmatrix_transpose_memcpy(gsl_spmatrix *dest, const gsl_spmatrix *src);
 /* AT: transpose in place by changing type and type conversion */
 int gsl_spmatrix_transpose(gsl_spmatrix *src);
-gsl_spmatrix *gsl_spmatrix_switch_major(gsl_spmatrix *src);
+ int gsl_spmatrix_switch_major(gsl_spmatrix *dest, const gsl_spmatrix *src);
 
 /* spmanip.c */
 /* AT: useful functions to study Markov chain transition matrices */

@@ -64,7 +64,7 @@ gsl_spmatrix_equal(const gsl_spmatrix *a, const gsl_spmatrix *b)
                 return 0;
             }
         }
-      else if (GSL_SPMATRIX_ISCCS(a) || GSL_SPMATRIX_CRS(a))
+      else if (GSL_SPMATRIX_ISCCS(a) || GSL_SPMATRIX_ISCRS(a))
         {
           /*
            * for compressed, both matrices should have everything
@@ -116,7 +116,7 @@ gsl_spmatrix_gt_elements(const gsl_spmatrix *m, const double d)
     {
       for (n = 0; n < m->nz; n++)
 	{
-	  gsl_spmatrix_set(comp, m->innerIdx[n], m->p[n], (double) (m->data[n] > d), 0);
+	  gsl_spmatrix_set(comp, m->i[n], m->p[n], (double) (m->data[n] > d), 0);
 	}
     }
   else if (GSL_SPMATRIX_ISCCS(m))
@@ -125,7 +125,7 @@ gsl_spmatrix_gt_elements(const gsl_spmatrix *m, const double d)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      gsl_spmatrix_set(comp, m->innerIdx[p], outerIdx, (double) (m->data[p] > d), 0);
+	      gsl_spmatrix_set(comp, m->i[p], outerIdx, (double) (m->data[p] > d), 0);
 	    }
 	}
     }
@@ -135,7 +135,7 @@ gsl_spmatrix_gt_elements(const gsl_spmatrix *m, const double d)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      gsl_spmatrix_set(comp, outerIdx, m->innerIdx[p], (double) (m->data[p] > d), 0);
+	      gsl_spmatrix_set(comp, outerIdx, m->i[p], (double) (m->data[p] > d), 0);
 	    }
 	}
     }
@@ -165,7 +165,7 @@ gsl_spmatrix_ge_elements(const gsl_spmatrix *m, const double d)
     {
       for (n = 0; n < m->nz; n++)
 	{
-	  gsl_spmatrix_set(comp, m->innerIdx[n], m->p[n], (double) (m->data[n] >= d), 0);
+	  gsl_spmatrix_set(comp, m->i[n], m->p[n], (double) (m->data[n] >= d), 0);
 	}
     }
   else if (GSL_SPMATRIX_ISCCS(m))
@@ -174,7 +174,7 @@ gsl_spmatrix_ge_elements(const gsl_spmatrix *m, const double d)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      gsl_spmatrix_set(comp, m->innerIdx[p], outerIdx, (double) (m->data[p] >= d), 0);
+	      gsl_spmatrix_set(comp, m->i[p], outerIdx, (double) (m->data[p] >= d), 0);
 	    }
 	}
     }
@@ -184,7 +184,7 @@ gsl_spmatrix_ge_elements(const gsl_spmatrix *m, const double d)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      gsl_spmatrix_set(comp, outerIdx, m->innerIdx[p], (double) (m->data[p] >= d), 0);
+	      gsl_spmatrix_set(comp, outerIdx, m->i[p], (double) (m->data[p] >= d), 0);
 	    }
 	}
     }
@@ -214,7 +214,7 @@ gsl_spmatrix_lt_elements(const gsl_spmatrix *m, const double d)
     {
       for (n = 0; n < m->nz; n++)
 	{
-	  gsl_spmatrix_set(comp, m->innerIdx[n], m->p[n], (double) (m->data[n] < d), 0);
+	  gsl_spmatrix_set(comp, m->i[n], m->p[n], (double) (m->data[n] < d), 0);
 	}
     }
   else if (GSL_SPMATRIX_ISCCS(m))
@@ -223,7 +223,7 @@ gsl_spmatrix_lt_elements(const gsl_spmatrix *m, const double d)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      gsl_spmatrix_set(comp, m->innerIdx[p], outerIdx, (double) (m->data[p] < d), 0);
+	      gsl_spmatrix_set(comp, m->i[p], outerIdx, (double) (m->data[p] < d), 0);
 	    }
 	}
     }
@@ -233,7 +233,7 @@ gsl_spmatrix_lt_elements(const gsl_spmatrix *m, const double d)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      gsl_spmatrix_set(comp, outerIdx, m->innerIdx[p], (double) (m->data[p] < d), 0);
+	      gsl_spmatrix_set(comp, outerIdx, m->i[p], (double) (m->data[p] < d), 0);
 	    }
 	}
     }
@@ -263,7 +263,7 @@ gsl_spmatrix_le_elements(const gsl_spmatrix *m, const double d)
     {
       for (n = 0; n < m->nz; n++)
 	{
-	  gsl_spmatrix_set(comp, m->innerIdx[n], m->p[n], (double) (m->data[n] <= d), 0);
+	  gsl_spmatrix_set(comp, m->i[n], m->p[n], (double) (m->data[n] <= d), 0);
 	}
     }
   else if (GSL_SPMATRIX_ISCCS(m))
@@ -272,7 +272,7 @@ gsl_spmatrix_le_elements(const gsl_spmatrix *m, const double d)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      gsl_spmatrix_set(comp, m->innerIdx[p], outerIdx, (double) (m->data[p] <= d), 0);
+	      gsl_spmatrix_set(comp, m->i[p], outerIdx, (double) (m->data[p] <= d), 0);
 	    }
 	}
     }
@@ -282,7 +282,7 @@ gsl_spmatrix_le_elements(const gsl_spmatrix *m, const double d)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      gsl_spmatrix_set(comp, outerIdx, m->innerIdx[p], (double) (m->data[p] <= d), 0);
+	      gsl_spmatrix_set(comp, outerIdx, m->i[p], (double) (m->data[p] <= d), 0);
 	    }
 	}
     }
