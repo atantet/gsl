@@ -146,7 +146,7 @@ gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v)
     {
       for (n = 0; n < m->nz; n++)
 	{
-	  if (gsl_pow_2(v->data[m->i[n] * v->stride]) > 1.e-6)
+	  if (gsl_pow_2(v->data[m->i[n] * v->stride]) > 1.e-12)
 	    {
 	      m->data[n] /= v->data[m->i[n] * v->stride];
 	    }
@@ -158,7 +158,7 @@ gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > 1.e-6)
+	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > 1.e-12)
 		{
 		  m->data[p] /= v->data[m->i[p] * v->stride];
 		}
@@ -171,7 +171,7 @@ gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > 1.e-6)
+	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > 1.e-12)
 		{
 		  m->data[p] /= v->data[outerIdx * v->stride];
 		}
@@ -203,7 +203,7 @@ gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v)
     {
       for (n = 0; n < m->nz; n++)
 	{
-	  if (gsl_pow_2(v->data[m->p[n] * v->stride]) > 1.e-6)
+	  if (gsl_pow_2(v->data[m->p[n] * v->stride]) > 1.e-12)
 	    {
 	      m->data[n] = m->data[n] / v->data[m->p[n] * v->stride];
 	    }
@@ -215,7 +215,7 @@ gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > 1.e-6)
+	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > 1.e-12)
 		{
 		  m->data[p] /= v->data[outerIdx * v->stride];
 		}
@@ -228,7 +228,7 @@ gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > 1.e-6)
+	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > 1.e-12)
 		{
 		  m->data[p] /= v->data[m->i[p] * v->stride];
 		}

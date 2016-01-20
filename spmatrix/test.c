@@ -595,7 +595,7 @@ test_manip(const size_t M, const size_t N, const double density,
     {
       for (j = 0; j < N; j++)
 	{
-	  if (gsl_pow_2(denseRowSum->data[i * denseRowSum->stride]) > 1.e-6)
+	  if (gsl_pow_2(denseRowSum->data[i * denseRowSum->stride]) > 1.e-12)
 	    {
 	      gsl_matrix_set(denseDivRows, i, j, gsl_matrix_get(dense, i, j)
 			     / denseRowSum->data[i * denseRowSum->stride]);
@@ -605,7 +605,7 @@ test_manip(const size_t M, const size_t N, const double density,
 	      gsl_matrix_set(denseDivRows, i, j, gsl_matrix_get(dense, i, j));
 	    }
 
-	  if (gsl_pow_2(denseColSum->data[j * denseColSum->stride]) > 1.e-6)
+	  if (gsl_pow_2(denseColSum->data[j * denseColSum->stride]) > 1.e-12)
 	    {
 	      gsl_matrix_set(denseDivCols, i, j, gsl_matrix_get(dense, i, j)
 			     / denseColSum->data[j * denseColSum->stride]);
@@ -735,7 +735,7 @@ test_manip(const size_t M, const size_t N, const double density,
     {
       for (j = 0; j < N; j++)
 	{
-	  if (gsl_fcmp(gsl_matrix_get(denseDivCols, i, j), gsl_spmatrix_get(test, i, j), 1.e-6))
+	  if (gsl_fcmp(gsl_matrix_get(denseDivCols, i, j), gsl_spmatrix_get(test, i, j), 1.e-12))
 	    {
 	      fprintf(stdout, "mismatch: (%zu, %zu) %lf != %lf\n", i, j, gsl_matrix_get(denseDivCols, i, j),
 		      gsl_spmatrix_get(test, i, j));
