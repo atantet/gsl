@@ -70,8 +70,8 @@ typedef struct
 {
   size_t size1;     /* number of rows */
   size_t size2;     /* number of columns */
-  size_t innerSize; /* size of inner indices: number of rows (CCS) / cols (CRS) */
-  size_t outerSize; /* size of outer indices: number of cols (CCS) / rows (CRS) */
+  size_t innerSize; /* AT: size of inner indices: number of rows (CCS) / cols (CRS) */
+  size_t outerSize; /* AT: size of outer indices: number of cols (CCS) / rows (CRS) */
 
   size_t *i;     /* row (triplet,CCS) / column (CRS) indices of size nzmax */
   double *data;  /* matrix elements of size nzmax */
@@ -101,7 +101,7 @@ typedef struct
 
 #define GSL_SPMATRIX_TRIPLET      (0)
 #define GSL_SPMATRIX_CCS          (1)
-#define GSL_SPMATRIX_CRS          (2)
+#define GSL_SPMATRIX_CRS          (2) /* AT: Add CRS type */
 
 #define GSL_SPMATRIX_ISTRIPLET(m) ((m)->sptype == GSL_SPMATRIX_TRIPLET)
 #define GSL_SPMATRIX_ISCCS(m)     ((m)->sptype == GSL_SPMATRIX_CCS)
@@ -127,10 +127,12 @@ int gsl_spmatrix_memcpy(gsl_spmatrix *dest, const gsl_spmatrix *src);
 /* spgetset.c */
 double gsl_spmatrix_get(const gsl_spmatrix *m, const size_t i,
                         const size_t j);
+/* AT: possibility to sum duplicates */
 int gsl_spmatrix_set(gsl_spmatrix *m, const size_t i, const size_t j,
                      const double x, const int sum_duplicate);
 
 /* spcompress.c */
+/* AT: compress either in CCS or CRS */
  gsl_spmatrix *gsl_spmatrix_compress(const gsl_spmatrix *T, const size_t sptype);
 void gsl_spmatrix_cumsum(const size_t n, size_t *c);
 
@@ -145,6 +147,7 @@ int gsl_spmatrix_sp2d(gsl_matrix *A, const gsl_spmatrix *S);
 
 /* spprop.c */
 int gsl_spmatrix_equal(const gsl_spmatrix *a, const gsl_spmatrix *b);
+/* AT: tests on matrix elements */
 gsl_spmatrix *gsl_spmatrix_gt_elements(const gsl_spmatrix *m, const double d);
 gsl_spmatrix *gsl_spmatrix_ge_elements(const gsl_spmatrix *m, const double d);
 gsl_spmatrix *gsl_spmatrix_lt_elements(const gsl_spmatrix *m, const double d);
@@ -153,10 +156,12 @@ int gsl_spmatrix_any(const gsl_spmatrix *m);
 
 /* spswap.c */
 int gsl_spmatrix_transpose_memcpy(gsl_spmatrix *dest, const gsl_spmatrix *src);
+/* AT: transpose in place by changing type and type conversion */
 int gsl_spmatrix_transpose(gsl_spmatrix *src);
 gsl_spmatrix *gsl_spmatrix_switch_major(gsl_spmatrix *src);
 
 /* spmanip.c */
+/* AT: useful functions to study Markov chain transition matrices */
 gsl_vector *gsl_spmatrix_get_rowsum(const gsl_spmatrix *m);
 gsl_vector *gsl_spmatrix_get_colsum(const gsl_spmatrix *m);
 double gsl_spmatrix_get_sum(const gsl_spmatrix *m);
@@ -164,8 +169,9 @@ int gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v);
 int gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v);
 
 /* spio.c */
+/* AT: input/output functions */
 int gsl_spmatrix_fprintf(FILE *stream, const gsl_spmatrix *m, const char *format);
-gsl_spmatrix *gsl_spmatrix_fscanf(FILE *stream);
+ gsl_spmatrix *gsl_spmatrix_fscanf(FILE *stream, const int sum_duplicate);
 
 
 __END_DECLS

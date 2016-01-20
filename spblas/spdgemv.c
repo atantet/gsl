@@ -106,37 +106,37 @@ gsl_spblas_dgemv(const CBLAS_TRANSPOSE_t TransA, const double alpha,
       if (alpha == 0.0)
         return GSL_SUCCESS;
 
-      /* form y := alpha*A*x + y */
+      /* form y := alpha*op(A)*x + y */
       Ap = A->p;
       Ad = A->data;
       X = x->data;
       incX = x->stride;
 
-      if (GSL_SPMATRIX_ISCCS(A))
+      /* AT: Support CRS (switching sparse type <=> transpose in place) */
+      if ((GSL_SPMATRIX_ISCCS(A) && (TransA == CblasNoTrans))
+	  || (GSL_SPMATRIX_ISCRS(A) && (TransA == CblasTrans)))
         {
           Ai = A->i;
 
-          if (TransA == CblasNoTrans)
-            {
-              for (j = 0; j < lenX; ++j)
-                {
-                  for (p = Ap[j]; p < Ap[j + 1]; ++p)
-                    {
-                      Y[Ai[p] * incY] += alpha * Ad[p] * X[j * incX];
-                    }
-                }
-            }
-          else
-            {
-              for (j = 0; j < lenY; ++j)
-                {
-                  for (p = Ap[j]; p < Ap[j + 1]; ++p)
-                    {
-                      Y[j * incY] += alpha * Ad[p] * X[Ai[p] * incX];
-                    }
-                }
-            }
-        }
+	  for (outerIdx = 0; outerIdx < A->outerSize; ++outerIdx)
+	    {
+	      for (p = Ap[outerIdx]; p < Ap[outerIdx + 1]; ++p)
+		{
+		  Y[Ai[p] * incY] += alpha * Ad[p] * X[outerIdx * incX];
+		}
+	    }
+	}
+      else if ((GSL_SPMATRIX_ISCRS(A) && (TransA == CblasNoTrans))
+	       || (GSL_SPMATRIX_ISCCS(A) && (TransA == CblasTrans)))
+	{
+	  for (outerIdx = 0; outerIdx < A->outerSize; ++outerIdx)
+	    {
+	      for (p = Ap[outerIdx]; p < Ap[outerIdx + 1]; ++p)
+		{
+		  Y[outerIdx * incY] += alpha * Ad[p] * X[Ai[p] * incX];
+		}
+	    }
+	}
       else if (GSL_SPMATRIX_ISTRIPLET(A))
         {
           if (TransA == CblasNoTrans)

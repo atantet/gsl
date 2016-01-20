@@ -40,30 +40,70 @@ Notes:
 */
 
 int
-gsl_spblas_dgemm(const double alpha, const gsl_spmatrix *A,
-                 const gsl_spmatrix *B, gsl_spmatrix *C)
+gsl_spblas_dgemm(const double alpha, const gsl_spmatrix *A1,
+                 const gsl_spmatrix *B1, gsl_spmatrix *C)
 {
-  if (A->size2 != B->size1 || A->size1 != C->size1 || B->size2 != C->size2)
+  if (A1->size2 != B1->size1 || A1->size1 != C->size1 || B1->size2 != C->size2)
     {
       GSL_ERROR("matrix dimensions do not match", GSL_EBADLEN);
     }
-  else if (A->sptype != B->sptype || A->sptype != C->sptype)
+  else if (A1->sptype != B1->sptype || A1->sptype != C->sptype)
     {
       GSL_ERROR("matrix storage formats do not match", GSL_EINVAL);
     }
-  else if (!GSL_SPMATRIX_ISCCS(A))
+  else if (!(GSL_SPMATRIX_ISCCS(A1) || GSL_SPMATRIX_CRS(A1)))
     {
       GSL_ERROR("compressed column format required", GSL_EINVAL);
     }
   else
     {
+      gsl_spmatrix *C, *A2, *B2;
+      
+      if (GSL_SPMATRIX_ISCRS(A1))
+	{
+	  /* AT: In case of CRS use multiply on CCS by calculating (alpha*B^T*A^T)^T
+	   * Transposing in place and then back would be dangerous.
+	   * Instead, copy and transpose the matrices without reallocating
+	   * and changin only the flags and dimensions.
+	   * Care should be taken not to modify the pointers. */
+	  B = (gsl_spmatrix *) calloc(1, sizeof(gsl_spmatrix));
+	  B->size1 = A1->size2;
+	  B->size2 = A1->size1;
+	  B->sptype = GSL_SPMATRIX_CCS;
+	  B->innerSize = A1->innerSize;
+	  B->outerSize = A1->outerSize;
+	  B->i = A1->i;
+	  B->data = A1->data;
+	  B->p = A1->p;
+	  B->nzmax = A1->nzmax;
+	  B->nz = A1->nz;
+	  B->work = A1->work;
+
+	  A = gsl_spmatrix_alloc_nzmax(B1->size2, B1->size1, 0, GSL_SPMATRIX_CCS);
+	  A->size1 = B1->size2;
+	  A->size2 = B1->size1;
+	  A->sptype = GSL_SPMATRIX_CCS;
+	  A->innerSize = B1->innerSize;
+	  A->outerSize = B1->outerSize;
+	  A->i = B1->i;
+	  A->data = B1->data;
+	  A->p = B1->p;
+	  A->nzmax = B1->nzmax;
+	  A->nz = B1->nz;
+	  A->work = B1->work;
+	}
+      else
+	{
+	  A = A1;
+	  B = B1;
+	}
       int status = GSL_SUCCESS;
       const size_t M = A->size1;
       const size_t N = B->size2;
       size_t *Bi = B->i;
       size_t *Bp = B->p;
       double *Bd = B->data;
-      size_t *w = (size_t *) A->work; /* workspace of length M */
+      size_t *w = (size_t *) A1->work; /* workspace of length M */
       double *x = (double *) C->work; /* workspace of length M */
       size_t *Cp, *Ci;
       double *Cd;
@@ -119,6 +159,16 @@ gsl_spblas_dgemm(const double alpha, const gsl_spmatrix *A,
       /* scale by alpha */
       gsl_spmatrix_scale(C, alpha);
 
+      /* AT: Calculate the transpose of C in place */
+      if (GSL_SPMATRIX_ISCRS(A))
+	{
+	  if ((status = gsl_spmatrix_transpose(C)) != GSL_SUCCESS)
+	    {
+	      GSL_ERROR_NULL("could not transpose result of \
+matrix multiplication in place", GSL_ENOMEM);
+	    }
+	}
+      
       return status;
     }
 } /* gsl_spblas_dgemm() */
@@ -152,9 +202,9 @@ necessarily in order - ie: the row indices C->i may not be in ascending order.
 */
 
 size_t
-gsl_spblas_scatter(const gsl_spmatrix *A, const size_t j, const double alpha,
-                   size_t *w, double *x, const size_t mark, gsl_spmatrix *C,
-                   size_t nz)
+gsl_spblas_scatter(const gsl_spmatrix *A, const size_t outerIdx,
+		   const double alpha, size_t *w, double *x,
+		   const size_t mark, gsl_spmatrix *C, size_t nz)
 {
   size_t p;
   size_t *Ai = A->i;
@@ -162,19 +212,34 @@ gsl_spblas_scatter(const gsl_spmatrix *A, const size_t j, const double alpha,
   double *Ad = A->data;
   size_t *Ci = C->i;
 
-  for (p = Ap[j]; p < Ap[j + 1]; ++p)
+  /* AT: just remain i and j which are not row and col in the CRS case */
+  for (p = Ap[outerIdx]; p < Ap[outerIdx + 1]; ++p)
     {
-      size_t i = Ai[p];          /* A(i,j) is nonzero */
+      /* A(innerIdx,outerIdx) (CCS)
+       * A(outerIdx,innerIdx) (CRS) is nonzero */
+      size_t innerIdx = Ai[p];          
 
-      if (w[i] < mark)           /* check if row i has been stored in column j yet */
+      /* check if inner index innerIdx has been stored 
+       * in outer outerIdx yet */
+      if (w[innerIdx] < mark)           
         {
-          w[i] = mark;           /* i is new entry in column j */
-          Ci[nz++] = i;          /* add i to pattern of C(:,j) */
-          x[i] = alpha * Ad[p];  /* x(i) = alpha * A(i,j) */
+	  /* innerIdx is new entry in outer outerIdx */
+          w[innerIdx] = mark;
+	  
+	  /* add innerIdx to pattern of
+	   * C(:,outerIdx) (CCS) / C(outerIdx,:) (CRS)*/
+	  Ci[nz++] = innerIdx;
+	  /* x(innerIdx) = alpha * A(innerIdx,outerIdx) (CCS)
+	   * x(innerIdx) = alpha * A(outerIdx,innerIdx) (CRS) */
+          x[innerIdx] = alpha * Ad[p];  
         }
-      else                       /* this (i,j) exists in C from a previous call */
+      else    
         {
-          x[i] += alpha * Ad[p]; /* add alpha*A(i,j) to C(i,j) */
+	  /* this (innerIdx,outerIdx) (CCS) / (outerIdx,innerIdx) (CRS)
+	   * exists in C from a previous call */
+	  /* add alpha*A(innerIdx,outerIdx) to C(innerIdx,outerIdx) (CCS) 
+	   *     alpha*A(outerIdx,innerIdx) to C(outerIdx,innerIdx) (CRS) */
+          x[innerIdx] += alpha * Ad[p]; 
         }
     }
 

@@ -86,6 +86,8 @@ gsl_spmatrix_add(gsl_spmatrix *c, const gsl_spmatrix *a,
 {
   const size_t M = a->size1;
   const size_t N = a->size2;
+  const size_t innerSize = a->innerSize;
+  const size_t outerSize = a->outerSize;
 
   if (b->size1 != M || b->size2 != N || c->size1 != M || c->size2 != N)
     {
@@ -107,7 +109,7 @@ gsl_spmatrix_add(gsl_spmatrix *c, const gsl_spmatrix *a,
       double *x = (double *) b->work;
       size_t *Cp, *Ci;
       double *Cd;
-      size_t j, p;
+      size_t j, p, outerIdx;
       size_t nz = 0; /* number of non-zeros in c */
 
       if (c->nzmax < a->nz + b->nz)
@@ -118,29 +120,30 @@ gsl_spmatrix_add(gsl_spmatrix *c, const gsl_spmatrix *a,
         }
 
       /* initialize w = 0 */
-      for (j = 0; j < M; ++j)
+      for (j = 0; j < innerSize; ++j)
         w[j] = 0;
 
       Ci = c->i;
       Cp = c->p;
       Cd = c->data;
 
-      for (j = 0; j < N; ++j)
+      /* AT: loop over the outer indices */
+      for (outerIdx = 0; outerIdx < outerSize; ++outerIdx)
         {
-          Cp[j] = nz;
+          Cp[outerIdx] = nz;
 
-          /* x += A(:,j) */
-          nz = gsl_spblas_scatter(a, j, 1.0, w, x, j + 1, c, nz);
+          /* x += A(:,outerIdx) (CCS) / x += A(outerIdx,:) (CRS) */
+          nz = gsl_spblas_scatter(a, outerIdx, 1.0, w, x, outerIdx + 1, c, nz);
 
-          /* x += B(:,j) */
-          nz = gsl_spblas_scatter(b, j, 1.0, w, x, j + 1, c, nz);
+          /* x += B(:,outerIdx) (CCS) / x += B(outerIdx,:) (CRS)*/
+          nz = gsl_spblas_scatter(b, outerIdx, 1.0, w, x, outerIdx + 1, c, nz);
 
-          for (p = Cp[j]; p < nz; ++p)
+          for (p = Cp[outerIdx]; p < nz; ++p)
             Cd[p] = x[Ci[p]];
         }
 
       /* finalize last column of c */
-      Cp[N] = nz;
+      Cp[outerIdx] = nz;
       c->nz = nz;
 
       return status;
@@ -172,7 +175,7 @@ gsl_spmatrix_d2sp(gsl_spmatrix *S, const gsl_matrix *A)
           double x = gsl_matrix_get(A, i, j);
 
           if (x != 0.0)
-            gsl_spmatrix_set(S, i, j, x);
+            gsl_spmatrix_set(S, i, j, x, 0);
         }
     }
 
@@ -195,6 +198,7 @@ gsl_spmatrix_sp2d(gsl_matrix *A, const gsl_spmatrix *S)
     {
       gsl_matrix_set_zero(A);
 
+      /* AT: adding compressed matrix support is straight-forward */
       if (GSL_SPMATRIX_ISTRIPLET(S))
         {
           size_t n;
@@ -208,9 +212,41 @@ gsl_spmatrix_sp2d(gsl_matrix *A, const gsl_spmatrix *S)
               gsl_matrix_set(A, i, j, x);
             }
         }
+      else if (GSL_SPMATRIX_ISCCS(S))
+	{
+	  size_t outerIdx, p;
+
+	  for (outerIdx = 0; outerIdx < S->outerSize; outerIdx++)
+	    {
+	      for (p = S->p[outerIdx]; p < S->p[outerIdx + 1]; ++p)
+		{
+		  size_t i = S->i[p];
+		  size_t j = outerIdx;
+		  double x = S->data[p];
+		  
+		  gsl_matrix_set(A, i, j, x);
+		}
+	    }
+	}
+      else if (GSL_SPMATRIX_ISCRS(S))
+	{
+	  size_t outerIdx, p;
+
+	  for (outerIdx = 0; outerIdx < S->outerSize; outerIdx++)
+	    {
+	      for (p = S->p[outerIdx]; p < S->p[outerIdx + 1]; ++p)
+		{
+		  size_t i = outerIdx;
+		  size_t j = S->i[p];
+		  double x = S->data[p];
+		  
+		  gsl_matrix_set(A, i, j, x);
+		}
+	    }
+	}
       else
         {
-          GSL_ERROR("non-triplet formats not yet supported", GSL_EINVAL);
+          GSL_ERROR("unknown sparse matrix type", GSL_EINVAL);
         }
 
       return GSL_SUCCESS;
