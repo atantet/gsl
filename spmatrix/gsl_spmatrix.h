@@ -162,8 +162,8 @@ int gsl_spmatrix_transpose(gsl_spmatrix *src);
 
 /* spmanip.c */
 /* AT: useful functions to study Markov chain transition matrices */
-gsl_vector *gsl_spmatrix_get_rowsum(const gsl_spmatrix *m);
-gsl_vector *gsl_spmatrix_get_colsum(const gsl_spmatrix *m);
+int gsl_spmatrix_get_rowsum(gsl_vector *sum, const gsl_spmatrix *m);
+ int gsl_spmatrix_get_colsum(gsl_vector *sum, const gsl_spmatrix *m);
 double gsl_spmatrix_get_sum(const gsl_spmatrix *m);
 int gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v);
 int gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v);

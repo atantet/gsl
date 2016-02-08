@@ -16,14 +16,14 @@
 /** \brief Get the sum of the elements of a compressed matrix over each row.
  * 
  * Get the sum of the elements of a compressed matrix over each row.
- * \param[in] m Compressed matrix over which to sum.
- * \return      Vector of the sum of the rows.
+ * \param[out] sum Resulting vector of the sum of the rows.
+ * \param[in]  m   Compressed matrix over which to sum.
+ * \return         Exit status.
  */
-gsl_vector *
-gsl_spmatrix_get_rowsum(const gsl_spmatrix *m)
+int
+gsl_spmatrix_get_rowsum(gsl_vector *sum, const gsl_spmatrix *m)
 {
   size_t n, outerIdx, p;
-  gsl_vector *sum = gsl_vector_calloc(m->size1);;
     
   if (GSL_SPMATRIX_ISTRIPLET(m))
     {
@@ -54,24 +54,23 @@ gsl_spmatrix_get_rowsum(const gsl_spmatrix *m)
     }
   else
     {
-      GSL_ERROR_NULL("unknown sparse matrix type", GSL_EINVAL);
+      GSL_ERROR("unknown sparse matrix type", GSL_EINVAL);
     }
 
-
-  return sum;
+  return GSL_SUCCESS;
 }
 
 /** \brief Get the sum of the elements of a compressed matrix over each column.
  * 
  * Get the sum of the elements of a compressed matrix over each column.
- * \param[in] m Compressed matrix over which to sum.
- * \return      Vector of the sum of the columns.
+ * \param[out] sum Resulting vector of the sum of the columns.
+ * \param[in]  m   Compressed matrix over which to sum.
+ * \return         Exit status.
  */
-gsl_vector *
-gsl_spmatrix_get_colsum(const gsl_spmatrix *m)
+int
+gsl_spmatrix_get_colsum(gsl_vector *sum, const gsl_spmatrix *m)
 {
   size_t outerIdx, p, n;
-  gsl_vector *sum = gsl_vector_calloc(m->size2);
     
   if (GSL_SPMATRIX_ISTRIPLET(m))
     {
@@ -102,10 +101,10 @@ gsl_spmatrix_get_colsum(const gsl_spmatrix *m)
     }
   else
     {
-      GSL_ERROR_NULL("unknown sparse matrix type", GSL_EINVAL);
+      GSL_ERROR("unknown sparse matrix type", GSL_EINVAL);
     }
   
-  return sum;
+  return GSL_SUCCESS;
 }
 
 /** 

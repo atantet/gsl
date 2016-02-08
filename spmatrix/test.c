@@ -643,7 +643,8 @@ test_manip(const size_t M, const size_t N, const double density,
   /** COLUMN SUM AND DIVIDE */
   /** Triplet */
   /* Sum */
-  v = gsl_spmatrix_get_rowsum(tri);
+  v = gsl_vector_alloc(M);
+  gsl_spmatrix_get_rowsum(v, tri);
   status = 0;
   for (i = 0; i < M; i++)
     if (v->data[i * v->stride] != denseRowSum->data[i * denseRowSum->stride])
@@ -668,7 +669,8 @@ test_manip(const size_t M, const size_t N, const double density,
 
   /** CCS */
   /* Sum */
-  v = gsl_spmatrix_get_rowsum(ccs);
+  v = gsl_vector_alloc(M);
+  gsl_spmatrix_get_rowsum(v, ccs);
   status = 0;
   for (i = 0; i < M; i++)
     if (v->data[i * v->stride] != denseRowSum->data[i * denseRowSum->stride])
@@ -693,7 +695,8 @@ test_manip(const size_t M, const size_t N, const double density,
   
   /* CRS */
   /* Sum */
-  v = gsl_spmatrix_get_rowsum(crs);
+  v = gsl_vector_alloc(M);
+  gsl_spmatrix_get_rowsum(v, crs);
   status = 0;
   for (i = 0; i < M; i++)
     if (v->data[i * v->stride] != denseRowSum->data[i * denseRowSum->stride])
@@ -720,7 +723,8 @@ test_manip(const size_t M, const size_t N, const double density,
   /** COLUMN SUM AND DIVIDE */
   /** Triplet */
   /* Sum */
-  v = gsl_spmatrix_get_colsum(tri);
+  v = gsl_vector_alloc(N);
+  gsl_spmatrix_get_colsum(v, tri);
   status = 0;
   for (j = 0; j < N; j++)
     if (v->data[j * v->stride] != denseColSum->data[j * denseColSum->stride])
@@ -749,7 +753,8 @@ test_manip(const size_t M, const size_t N, const double density,
 
   /** CCS */
   /** Sum */
-  v = gsl_spmatrix_get_colsum(ccs);
+  v = gsl_vector_alloc(N);
+  gsl_spmatrix_get_colsum(v, ccs);
   status = 0;
   for (j = 0; j < N; j++)
     if (v->data[j * v->stride] != denseColSum->data[j * denseColSum->stride])
@@ -774,7 +779,8 @@ test_manip(const size_t M, const size_t N, const double density,
   
   /** CRS */
   /* Sum */
-  v = gsl_spmatrix_get_colsum(crs);
+  v = gsl_vector_alloc(N);
+  gsl_spmatrix_get_colsum(v, crs);
   status = 0;
   for (j = 0; j < N; j++)
     if (v->data[j * v->stride] != denseColSum->data[j * denseColSum->stride])
