@@ -141,13 +141,12 @@ int
 gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v, const double tol)
 {
   size_t outerIdx, p, n;
-  double tol2 = gsl_pow_2(tol);
 
   if (GSL_SPMATRIX_ISTRIPLET(m))
     {
       for (n = 0; n < m->nz; n++)
 	{
-	  if (gsl_pow_2(v->data[m->i[n] * v->stride]) > tol2)
+	  if (gsl_pow_2(v->data[m->i[n] * v->stride]) > tol)
 	    {
 	      m->data[n] /= v->data[m->i[n] * v->stride];
 	    }
@@ -159,7 +158,7 @@ gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v, const double tol)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > tol2)
+	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > tol)
 		{
 		  m->data[p] /= v->data[m->i[p] * v->stride];
 		}
@@ -172,7 +171,7 @@ gsl_spmatrix_div_rows(gsl_spmatrix *m, const gsl_vector *v, const double tol)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > tol2)
+	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > tol)
 		{
 		  m->data[p] /= v->data[outerIdx * v->stride];
 		}
@@ -200,13 +199,12 @@ int
 gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v, const double tol)
 {
   size_t outerIdx, p, n;
-  double tol2 = gsl_pow_2(tol);
 
   if (GSL_SPMATRIX_ISTRIPLET(m))
     {
       for (n = 0; n < m->nz; n++)
 	{
-	  if (gsl_pow_2(v->data[m->p[n] * v->stride]) > tol2)
+	  if (gsl_pow_2(v->data[m->p[n] * v->stride]) > tol)
 	    {
 	      m->data[n] = m->data[n] / v->data[m->p[n] * v->stride];
 	    }
@@ -218,7 +216,7 @@ gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v, const double tol)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > tol2)
+	      if (gsl_pow_2(v->data[outerIdx * v->stride]) > tol)
 		{
 		  m->data[p] /= v->data[outerIdx * v->stride];
 		}
@@ -231,7 +229,7 @@ gsl_spmatrix_div_cols(gsl_spmatrix *m, const gsl_vector *v, const double tol)
 	{
 	  for (p = m->p[outerIdx]; p < m->p[outerIdx + 1]; ++p)
 	    {
-	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > tol2)
+	      if (gsl_pow_2(v->data[m->i[p] * v->stride]) > tol)
 		{
 		  m->data[p] /= v->data[m->i[p] * v->stride];
 		}

@@ -13,10 +13,15 @@
  */
 
 /**
- * \brief Write sparse matrix as triplet list to stream
+ * \brief Write sparse matrix in MatrixMarket coordinate format.
  *
- * Write sparse matrix to stream as triplet list "i_k, j_k, d_k"
- * with a one line header "size1, size2, nz".
+ * Write sparse matrix in MatrixMarket coordinate format.
+ * The first line is a header with the matrix type.
+ * The first line after a % delimited comment section
+ * gives the numer of rows, columns and non-zero elements
+ * of the matrix: "size1 size2 nz".
+ * The following nz lines give the matrix elements 
+ * with row, column and value: "i j mij"
  * \param[in] stream Opened stream for writing.
  * \param[in] m      Sparse matrix to write.
  * \param[in] format Format specifier.
@@ -26,13 +31,33 @@ gsl_spmatrix_fprintf(FILE *stream, const gsl_spmatrix *m, const char *format)
 {
   size_t n, outerIdx, p;
   char formatStr[256];
+  const char headerMM[] = "%%MatrixMarket";
+  const char object[] = "matrix";
+  const char matrixFormat[] = "coordinate";
+  /**const char matrixFormat[] = "array";*/
+  const char dataType[] = "real";
+  /**const char dataType[] = "integer";*/
+  /**const char dataType[] = "complex";*/
+  /**const char dataType[] = "pattern";*/
+  const char structure[] = "general";
+  /**const char structure[] = "symmetric";*/
+  /**const char structure[] = "skew-symmetric";*/
+  /**const char structure[] = "Hermitian";*/
 
   /** Make element format string out of data format specifier */
   sprintf(formatStr, "%s%s%s", "%zu\t%zu\t", format, "\n");
 
   /** Print one-line header */
+  if (fprintf(stream, "%s %s %s %s %s\n", headerMM, object, matrixFormat, dataType, structure) <= 0)
+    {
+      GSL_ERROR("Not all arguments printed for header", GSL_EFAILED);
+    }
+
+  /** Print dimensions header */
   if (fprintf(stream, "%zu\t%zu\t%zu\n", m->size1, m->size2, m->nz) <= 0)
-    GSL_ERROR("Not all arguments printed for header", GSL_EFAILED);
+    {
+      GSL_ERROR("Not all arguments printed for matrix dimension line", GSL_EFAILED);
+    }
 
   /** Print elements */
   if (GSL_SPMATRIX_ISTRIPLET(m))
@@ -76,14 +101,18 @@ gsl_spmatrix_fprintf(FILE *stream, const gsl_spmatrix *m, const char *format)
 }
 
 /**
- * \brief Read sparse matrix as triplet list from stream
+ * \brief Read sparse matrix in MatrixMarket coordinate format.
  *
- * Read sparse matrix from stream as triplet list "i_k, j_k, d_k"
- * with a one line header "size1, size2, nz".
- * The matrix should not be allocated, since its dimensions
- * and number of non-zero elements is read from the header.
- * \param[in]  stream Opened stream for reading.
- * \return     Sparse matrix scanned.
+ * Read sparse matrix in MatrixMarket coordinate format.
+ * The first line is a header with the matrix type.
+ * The first line after a % delimited comment section
+ * gives the numer of rows, columns and non-zero elements
+ * of the matrix: "size1 size2 nz".
+ * The following nz lines give the matrix elements 
+ * with row, column and value: "i j mij"
+ * \param[in] stream Opened stream for reading.
+ * \param[in] m      Sparse matrix to read.
+ * \param[in] format Format specifier.
  */
 gsl_spmatrix *
 gsl_spmatrix_fscanf(FILE *stream, const int sum_duplicate)
@@ -93,6 +122,13 @@ gsl_spmatrix_fscanf(FILE *stream, const int sum_duplicate)
   size_t i, j;
   double x;
   gsl_spmatrix *m;
+
+  /** fscanf automatically skips the first line header and comments,
+   *  since % is a format specifier.
+   *  No test is being perfomed regarding
+   *  the validity of the matrix format
+   *  (i.e. %%MatrixMarket matrix coordinate read general
+   *  is assumed). */
 
   /** Read one-line header and allocate */
   if (fscanf(stream, "%zu %zu %zu", &M, &N, &nz) < 3)
