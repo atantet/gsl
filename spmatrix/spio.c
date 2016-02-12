@@ -122,17 +122,16 @@ gsl_spmatrix_fscanf(FILE *stream, const int sum_duplicate)
   size_t i, j;
   double x;
   gsl_spmatrix *m;
+  char buffer[256];
 
-  /** fscanf automatically skips the first line header and comments,
-   *  since % is a format specifier.
-   *  No test is being perfomed regarding
-   *  the validity of the matrix format
-   *  (i.e. %%MatrixMarket matrix coordinate read general
-   *  is assumed). */
+  /** Skip comments */
+  fgets(buffer, 256, stream);
+  while (buffer[0] == '%')
+    fgets(buffer, 256, stream);
 
   /** Read one-line header and allocate */
-  if (fscanf(stream, "%zu %zu %zu", &M, &N, &nz) < 3)
-    {
+  if (sscanf(buffer, "%zu %zu %zu", &M, &N, &nz) < 3)
+    { 
       GSL_ERROR_NULL("Not all arguments scanned for header", GSL_EFAILED);
     }
   m = gsl_spmatrix_alloc_nzmax(M, N, nz, GSL_SPMATRIX_TRIPLET);
